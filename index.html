@@ -334,32 +334,59 @@
           this.id = data.id || Date.now().toString();
           this.name = data.name;
           this.description = data.description || "";
-          this.type = data.type || "good"; // "good" or "bad"
-          // history is an array of date strings (YYYY-MM-DD) when habit was completed
-          this.history = data.history || [];
+          this.type = data.type || "good";
+          
+          // Convert array history to object format if needed
+          if (Array.isArray(data.history)) {
+            this.history = {};
+            data.history.forEach(date => {
+              this.history[date] = "completed";
+            });
+          } else {
+            this.history = data.history || {};
+          }
+          
+          console.log('Created habit:', this); // Debug log
         }
 
         markCompleted(dateStr) {
-          if (!this.history.includes(dateStr)) {
-            this.history.push(dateStr);
-            this.history.sort();
-          }
+          this.history[dateStr] = "completed";
+          console.log(`Marked ${this.name} as completed on ${dateStr}`); // Debug log
         }
 
-        unmarkCompleted(dateStr) {
-          this.history = this.history.filter((d) => d !== dateStr);
+        markFailed(dateStr) {
+          this.history[dateStr] = "failed";
+          console.log(`Marked ${this.name} as failed on ${dateStr}`); // Debug log
         }
 
-        toggleCompletion(dateStr) {
-          if (this.isCompletedOn(dateStr)) {
-            this.unmarkCompleted(dateStr);
-          } else {
-            this.markCompleted(dateStr);
-          }
+        unmark(dateStr) {
+          delete this.history[dateStr];
+          console.log(`Unmarked ${this.name} on ${dateStr}`); // Debug log
+        }
+
+        getStatus(dateStr) {
+          return this.history[dateStr];
         }
 
         isCompletedOn(dateStr) {
-          return this.history.includes(dateStr);
+          return this.history[dateStr] === "completed";
+        }
+
+        isFailedOn(dateStr) {
+          return this.history[dateStr] === "failed";
+        }
+
+        toggleCompletion(dateStr, status) {
+          const currentStatus = this.getStatus(dateStr);
+          if (currentStatus === status) {
+            this.unmark(dateStr);
+          } else {
+            if (status === "completed") {
+              this.markCompleted(dateStr);
+            } else if (status === "failed") {
+              this.markFailed(dateStr);
+            }
+          }
         }
 
         // Compute current streak (consecutive days up to today)
@@ -376,9 +403,9 @@
 
         // Compute longest streak from history
         getLongestStreak() {
-          if (this.history.length === 0) return 0;
+          if (Object.keys(this.history).length === 0) return 0;
           // sort dates ascending
-          const dates = [...this.history].sort();
+          const dates = Object.keys(this.history).sort();
           let longest = 1;
           let currentStreak = 1;
           for (let i = 1; i < dates.length; i++) {
@@ -399,6 +426,16 @@
       // HabitManager class to manage habit list and UI
       class HabitManager {
         constructor() {
+          // Test localStorage availability
+          try {
+            localStorage.setItem('test', 'test');
+            localStorage.removeItem('test');
+            console.log('localStorage is available');
+          } catch (e) {
+            console.error('localStorage is not available:', e);
+            alert('Your browser does not support or has disabled local storage. Your data will not persist.');
+          }
+          
           this.habits = [];
           this.LOCAL_STORAGE_KEY = "habitTrackerHabits";
           this.loadHabits();
@@ -407,29 +444,71 @@
           };
           this.setupEventListeners();
           this.renderUI();
+          
+          // Add debug logging
+          console.log('Initial load:', this.habits);
         }
 
         loadHabits() {
           try {
-            const stored = JSON.parse(localStorage.getItem(this.LOCAL_STORAGE_KEY)) || [];
-            this.habits = stored.map((data) => new Habit(data));
+            const stored = localStorage.getItem(this.LOCAL_STORAGE_KEY);
+            console.log('Loading from storage:', stored); // Debug log
+            
+            if (!stored) {
+              console.log('No data found in storage');
+              this.habits = [];
+              return;
+            }
+
+            const parsed = JSON.parse(stored);
+            console.log('Parsed data:', parsed); // Debug log
+            
+            this.habits = parsed.map(data => new Habit(data));
+            console.log('Loaded habits:', this.habits); // Debug log
           } catch (e) {
+            console.error('Error loading habits:', e); // Error logging
             this.habits = [];
           }
         }
 
         saveHabits() {
-          localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(this.habits));
+          try {
+            // Convert habits to a simple format for storage
+            const dataToSave = this.habits.map(habit => ({
+              id: habit.id,
+              name: habit.name,
+              description: habit.description,
+              type: habit.type,
+              history: habit.history
+            }));
+            
+            console.log('Saving habits:', dataToSave); // Debug log
+            localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+            
+            // Verify the save
+            const savedData = localStorage.getItem(this.LOCAL_STORAGE_KEY);
+            console.log('Verified saved data:', savedData); // Debug log
+          } catch (e) {
+            console.error('Error saving habits:', e);
+          }
         }
 
         renderUI() {
+          console.log('Rendering UI with habits:', this.habits); // Debug log
           this.renderHabitEntries();
           this.renderHeatmap();
         }
 
         renderHabitEntries() {
           const container = $("habit-entries");
-          if (!container) return;
+          console.log('Rendering habit entries, container:', container); // Debug log
+          if (!container) {
+            console.error('Habit entries container not found!');
+            return;
+          }
+          
+          console.log('Number of habits:', this.habits.length); // Debug log
+          
           if (this.habits.length === 0) {
             container.innerHTML = `<p class="text-center text-gray-500 py-4">No habits added yet. Click the + button to add one!</p>`;
             return;
@@ -442,18 +521,43 @@
             .map((habit) => {
               const today = formatDate(new Date());
               const completedToday = habit.isCompletedOn(today);
+              const failedToday = habit.isFailedOn(today);
               const currentStreak = habit.getCurrentStreak();
               const longestStreak = habit.getLongestStreak();
               return `
-              <div class="habit-entry" data-id="${habit.id}">
-                <div class="habit-header" onclick="habitManager.openEditHabitModal('${habit.id}')">
+              <div class="habit-entry relative" data-id="${habit.id}">
+                <button 
+                  onclick="habitManager.openEditHabitModal('${habit.id}')"
+                  class="absolute top-2 right-2 p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                  aria-label="Edit habit"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <div class="habit-header">
                   <div class="flex-1">
                     <h3 class="habit-title ${completedToday ? 'habit-completed' : ''}">${habit.name}</h3>
                   </div>
                   <div class="flex items-center gap-2">
-                    <button onclick="event.stopPropagation(); habitManager.toggleToday('${habit.id}')" class="px-2 py-1 border rounded text-sm ${completedToday ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-800'}">
-                      ${completedToday ? "Done" : "Mark Done"}
-                    </button>
+                    <div class="flex gap-1">
+                      <button 
+                        onclick="habitManager.toggleToday('${habit.id}', 'completed')" 
+                        class="px-2 py-1 border rounded text-sm ${
+                          completedToday ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-800'
+                        } ${failedToday ? 'line-through opacity-50' : ''}"
+                      >
+                        ${completedToday ? "Done" : "Done"}
+                      </button>
+                      <button 
+                        onclick="habitManager.toggleToday('${habit.id}', 'failed')" 
+                        class="px-2 py-1 border rounded text-sm ${
+                          failedToday ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-800'
+                        } ${completedToday ? 'line-through opacity-50' : ''}"
+                      >
+                        ${failedToday ? "Failed" : "Failed"}
+                      </button>
+                    </div>
                     <div class="text-xs text-gray-700 whitespace-nowrap">
                       <span>Current: ${currentStreak}d</span> |
                       <span>Longest: ${longestStreak}d</span>
@@ -514,20 +618,32 @@
             dates.forEach((d) => {
               const cell = document.createElement("div");
               cell.className = "heatmap-cell";
-              const isDone = habit.isCompletedOn(d);
+              const status = habit.getStatus(d);
               let bgColor;
-              if (isDone) {
+              if (status === "completed") {
                 bgColor = habit.type === "good" ? "bg-green-500" : "bg-red-500";
                 cell.title = "Completed";
+              } else if (status === "failed") {
+                bgColor = habit.type === "good" ? "bg-red-500" : "bg-green-500";
+                cell.title = "Failed";
               } else {
                 bgColor = "bg-gray-200";
-                cell.title = "Not Completed";
+                cell.title = "Not Marked";
               }
               cell.classList.add(bgColor);
               cell.innerHTML = `<span class="text-xs text-white">${new Date(d).getDate()}</span>`;
+              
+              // Update click handler to cycle through states
               cell.addEventListener("click", (e) => {
                 e.stopPropagation();
-                habit.toggleCompletion(d);
+                const currentStatus = habit.getStatus(d);
+                if (!currentStatus) {
+                  habit.markCompleted(d);
+                } else if (currentStatus === "completed") {
+                  habit.markFailed(d);
+                } else {
+                  habit.unmark(d);
+                }
                 this.saveHabits();
                 this.renderUI();
               });
@@ -541,6 +657,7 @@
         addHabit(data) {
           const newHabit = new Habit(data);
           this.habits.push(newHabit);
+          console.log('Adding new habit:', newHabit); // Debug log
           this.saveHabits();
           this.renderUI();
         }
@@ -562,11 +679,11 @@
           this.renderUI();
         }
 
-        toggleToday(id) {
+        toggleToday(id, status) {
           const habit = this.habits.find((h) => h.id === id);
           if (!habit) return;
           const today = formatDate(new Date());
-          habit.toggleCompletion(today);
+          habit.toggleCompletion(today, status);
           this.saveHabits();
           this.renderUI();
         }
