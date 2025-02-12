@@ -160,7 +160,7 @@
       }
     </style>
   </head>
-  <body class="bg-gray-100 p-6 font-sans">
+  <body class="bg-gray-100 p-3 sm:p-6 font-sans">
     <!-- Header -->
     <header class="mb-6 flex items-center justify-between">
       <h1 class="text-2xl font-bold">Daily Habit Tracker</h1>
@@ -183,23 +183,22 @@
     </header>
 
     <!-- Main Content -->
-    <main class="grid gap-6">
-      <!-- Habit List Section -->
-      <section id="habit-list" class="bg-white p-4 rounded shadow">
-        <h2 class="text-xl font-semibold mb-4">My Habits</h2>
-        <div id="habit-entries"></div>
-      </section>
-
+    <main class="grid gap-3 sm:gap-6">
       <!-- Streaks Visualization Section -->
-      <section id="streaks-visualization" class="bg-white p-4 rounded shadow">
-        <h2 class="text-xl font-semibold mb-4">Weekly Habit Heatmap</h2>
+      <section id="streaks-visualization" class="bg-white p-3 sm:p-4 rounded shadow">
         <div id="heatmap-container"></div>
       </section>
 
+      <!-- Habit List Section -->
+      <section id="habit-list" class="bg-white p-3 sm:p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-3 sm:mb-4">My Habits</h2>
+        <div id="habit-entries"></div>
+      </section>
+
       <!-- Data Management -->
-      <section id="data-management" class="bg-white p-4 rounded shadow">
-        <h2 class="text-xl font-semibold mb-4">Data Management</h2>
-        <div class="flex items-center gap-3">
+      <section id="data-management" class="bg-white p-3 sm:p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-3 sm:mb-4">Data Management</h2>
+        <div class="flex items-center gap-2 sm:gap-3">
           <button id="export-data" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition text-sm">
             Export Data
           </button>
@@ -429,7 +428,7 @@
             container.innerHTML = `<p class="text-center text-gray-500 py-4">No habits added yet. Click the + button to add one!</p>`;
             return;
           }
-          // Optionally hide habits that are “completed” (if user marks a habit as completed every day you might want to hide it)
+          // Optionally hide habits that are "completed" (if user marks a habit as completed every day you might want to hide it)
           const filteredHabits = this.settings.hideCompleted
             ? this.habits.filter((habit) => !habit.isCompletedOn(formatDate(new Date())))
             : this.habits;
@@ -484,7 +483,7 @@
           const headerRow = document.createElement("div");
           headerRow.className = "grid grid-cols-[150px_1fr] items-center mb-2";
           headerRow.innerHTML = `
-            <div class="text-sm font-medium text-gray-600">Habit</div>
+            <div></div>
             <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-600">
               ${dates
                 .map((d) => {
@@ -527,7 +526,7 @@
               }
               cell.classList.add(bgColor);
               cell.innerHTML = `<span class="text-xs text-white">${new Date(d).getDate()}</span>`;
-              // Clicking on a cell toggles that day’s completion
+              // Clicking on a cell toggles that day's completion
               cell.addEventListener("click", (e) => {
                 e.stopPropagation();
                 habit.toggleCompletion(d);
