@@ -81,14 +81,18 @@
         grid-template-columns: repeat(7, minmax(0, 1fr));
         gap: 0.25rem;
       }
-      /* Habit entry styles */
+      /* Habit entry styles - updated for compact/single-line display */
       .habit-entry {
         background-color: #f9fafb;
-        padding: 1rem;
+        padding: 0.5rem 1rem; /* reduced vertical padding */
         border-radius: 0.5rem;
         border: 1px solid #e5e7eb;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem; /* reduced bottom margin */
         position: relative;
+      }
+      /* Ensure habit title has no extra margin */
+      .habit-title {
+        margin: 0;
       }
       .habit-header {
         display: flex;
@@ -161,64 +165,67 @@
     </style>
   </head>
   <body class="bg-gray-100 p-3 sm:p-6 font-sans">
-    <!-- Header -->
-    <header class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold">Daily Habit Tracker</h1>
-      <button id="settings-btn" class="w-10 h-10 flex items-center justify-center border border-gray-200 bg-white rounded-full shadow hover:bg-gray-50 transition">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c.921.3.921 1.603 0 1.902a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.3.921-1.603.921-1.902 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-.921-.3-.921-1.603 0-1.902a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      </button>
-    </header>
+    <!-- Wrap content in a container for a centered max-width layout -->
+    <div class="container mx-auto max-w-4xl">
+      <!-- Updated Header with a gradient background -->
+      <header class="mb-6 flex items-center justify-between bg-gradient-to-r from-blue-400 to-blue-600 p-4 rounded shadow">
+        <h1 class="text-2xl font-bold text-white">Daily Habit Tracker</h1>
+        <button id="settings-btn" class="w-10 h-10 flex items-center justify-center border border-gray-200 bg-white rounded-full shadow hover:bg-gray-50 transition" aria-label="Open Settings">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11.049 2.927c.3-.921 1.603-.921 1.902 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c.921.3.921 1.603 0 1.902a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.3.921-1.603.921-1.902 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-.921-.3-.921-1.603 0-1.902a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+      </header>
 
-    <!-- Main Content -->
-    <main class="grid gap-3 sm:gap-6">
-      <!-- Streaks Visualization Section -->
-      <section id="streaks-visualization" class="bg-white p-3 sm:p-4 rounded shadow">
-        <div id="heatmap-container"></div>
-      </section>
+      <!-- Main Content -->
+      <main class="grid gap-3 sm:gap-6">
+        <!-- Streaks Visualization Section -->
+        <section id="streaks-visualization" class="bg-white p-3 sm:p-4 rounded shadow">
+          <div id="heatmap-container"></div>
+        </section>
 
-      <!-- Habit List Section -->
-      <section id="habit-list" class="bg-white p-3 sm:p-4 rounded shadow">
-        <h2 class="text-xl font-semibold mb-3 sm:mb-4">My Habits</h2>
-        <div id="habit-entries"></div>
-      </section>
+        <!-- Habit List Section -->
+        <section id="habit-list" class="bg-white p-3 sm:p-4 rounded shadow">
+          <h2 class="text-xl font-semibold mb-3 sm:mb-4">My Habits</h2>
+          <div id="habit-entries"></div>
+        </section>
 
-      <!-- Data Management -->
-      <section id="data-management" class="bg-white p-3 sm:p-4 rounded shadow">
-        <h2 class="text-xl font-semibold mb-3 sm:mb-4">Data Management</h2>
-        <div class="flex items-center gap-2 sm:gap-3">
-          <button id="export-data" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition text-sm">
-            Export Data
-          </button>
-          <input type="file" id="import-data" accept=".json" class="hidden" />
-          <button id="import-data-btn" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition text-sm">
-            Import Data
-          </button>
-        </div>
-      </section>
-    </main>
+        <!-- Data Management -->
+        <section id="data-management" class="bg-white p-3 sm:p-4 rounded shadow">
+          <h2 class="text-xl font-semibold mb-3 sm:mb-4">Data Management</h2>
+          <div class="flex items-center gap-2 sm:gap-3">
+            <button id="export-data" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition text-sm">
+              Export Data
+            </button>
+            <input type="file" id="import-data" accept=".json" class="hidden" />
+            <button id="import-data-btn" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition text-sm">
+              Import Data
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
 
-    <!-- Floating Add Habit Button -->
-    <button id="add-habit-btn" class="add-habit-btn">+</button>
+    <!-- Floating Add Habit Button with tooltip -->
+    <button id="add-habit-btn" class="add-habit-btn" title="Add New Habit">+</button>
 
     <!-- Add Habit Modal -->
-    <div id="add-habit-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div id="add-habit-modal" class="modal fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="add-habit-title">
       <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold">Add New Habit</h2>
-          <button type="button" class="modal-close modal-close-btn">
+          <h2 id="add-habit-title" class="text-lg font-semibold">Add New Habit</h2>
+          <button type="button" class="modal-close modal-close-btn" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -248,11 +255,11 @@
     </div>
 
     <!-- Edit Habit Modal -->
-    <div id="edit-habit-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div id="edit-habit-modal" class="modal fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="edit-habit-title">
       <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold">Edit Habit</h2>
-          <button type="button" class="modal-close modal-close-btn">
+          <h2 id="edit-habit-title" class="text-lg font-semibold">Edit Habit</h2>
+          <button type="button" class="modal-close modal-close-btn" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -279,7 +286,7 @@
             <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 focus:outline-none">
               Save Changes
             </button>
-            <button type="button" id="delete-habit-btn" class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-700 focus:outline-none">
+            <button type="button" id="delete-habit-btn" title="Delete Habit" class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-700 focus:outline-none">
               Delete
             </button>
           </div>
@@ -288,11 +295,11 @@
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div id="settings-modal" class="modal fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold">Settings</h2>
-          <button type="button" class="modal-close modal-close-btn">
+          <h2 id="settings-title" class="text-lg font-semibold">Settings</h2>
+          <button type="button" class="modal-close modal-close-btn" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
@@ -395,7 +402,6 @@
           this.habits = [];
           this.LOCAL_STORAGE_KEY = "habitTrackerHabits";
           this.loadHabits();
-          // Settings
           this.settings = {
             hideCompleted: JSON.parse(localStorage.getItem("hideCompletedHabits")) || false,
           };
@@ -441,19 +447,14 @@
               return `
               <div class="habit-entry" data-id="${habit.id}">
                 <div class="habit-header" onclick="habitManager.openEditHabitModal('${habit.id}')">
-                  <div>
+                  <div class="flex-1">
                     <h3 class="habit-title ${completedToday ? 'habit-completed' : ''}">${habit.name}</h3>
-                    ${
-                      habit.description
-                        ? `<p class="text-sm text-gray-600">${habit.description}</p>`
-                        : ""
-                    }
                   </div>
-                  <div class="flex flex-col items-end">
-                    <button onclick="event.stopPropagation(); habitManager.toggleToday('${habit.id}')" class="mb-1 px-2 py-1 border rounded text-sm ${completedToday ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                  <div class="flex items-center gap-2">
+                    <button onclick="event.stopPropagation(); habitManager.toggleToday('${habit.id}')" class="px-2 py-1 border rounded text-sm ${completedToday ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-800'}">
                       ${completedToday ? "Done" : "Mark Done"}
                     </button>
-                    <div class="text-xs text-gray-700">
+                    <div class="text-xs text-gray-700 whitespace-nowrap">
                       <span>Current: ${currentStreak}d</span> |
                       <span>Longest: ${longestStreak}d</span>
                     </div>
@@ -513,20 +514,17 @@
             dates.forEach((d) => {
               const cell = document.createElement("div");
               cell.className = "heatmap-cell";
-              // Color intensity: if habit was completed that day, full color; if not, light gray
               const isDone = habit.isCompletedOn(d);
               let bgColor;
               if (isDone) {
-                bgColor =
-                  habit.type === "good"
-                    ? "bg-green-500"
-                    : "bg-red-500";
+                bgColor = habit.type === "good" ? "bg-green-500" : "bg-red-500";
+                cell.title = "Completed";
               } else {
                 bgColor = "bg-gray-200";
+                cell.title = "Not Completed";
               }
               cell.classList.add(bgColor);
               cell.innerHTML = `<span class="text-xs text-white">${new Date(d).getDate()}</span>`;
-              // Clicking on a cell toggles that day's completion
               cell.addEventListener("click", (e) => {
                 e.stopPropagation();
                 habit.toggleCompletion(d);
@@ -579,13 +577,7 @@
         }
 
         closeAllModals() {
-          document.querySelectorAll(".modal-close").forEach((btn) => {
-            btn.closest("div[role='dialog'], .modal-close-btn").parentElement?.classList.add("hidden");
-          });
-          // Also close specific modals by ID
-          $("add-habit-modal").classList.add("hidden");
-          $("edit-habit-modal").classList.add("hidden");
-          $("settings-modal").classList.add("hidden");
+          document.querySelectorAll(".modal").forEach((modal) => modal.classList.add("hidden"));
         }
 
         openEditHabitModal(id) {
@@ -601,10 +593,19 @@
         setupEventListeners() {
           // Open add habit modal
           $("add-habit-btn").addEventListener("click", () => this.openAddHabitModal());
+
           // Close modals when clicking on .modal-close buttons
           document.querySelectorAll(".modal-close").forEach((btn) => {
             btn.addEventListener("click", () => this.closeAllModals());
           });
+
+          // Close modals on pressing the Escape key
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              this.closeAllModals();
+            }
+          });
+
           // Add habit form submit
           $("add-habit-form").addEventListener("submit", (e) => {
             e.preventDefault();
@@ -618,6 +619,7 @@
               this.closeAllModals();
             }
           });
+
           // Edit habit form submit
           $("edit-habit-form").addEventListener("submit", (e) => {
             e.preventDefault();
@@ -632,6 +634,7 @@
               this.closeAllModals();
             }
           });
+
           // Delete habit button in edit modal
           $("delete-habit-btn").addEventListener("click", () => {
             const id = $("edit-habit-id").value;
@@ -640,17 +643,20 @@
               this.closeAllModals();
             }
           });
+
           // Settings button
           $("settings-btn").addEventListener("click", () => {
             $("settings-modal").classList.remove("hidden");
             $("hide-completed-habits").checked = this.settings.hideCompleted;
           });
+
           // Settings toggle change
           $("hide-completed-habits").addEventListener("change", (e) => {
             this.settings.hideCompleted = e.target.checked;
             localStorage.setItem("hideCompletedHabits", JSON.stringify(this.settings.hideCompleted));
             this.renderUI();
           });
+
           // Export data
           $("export-data").addEventListener("click", () => {
             const dataStr = JSON.stringify(this.habits);
@@ -660,10 +666,12 @@
             link.setAttribute("download", "habit_tracker_data.json");
             link.click();
           });
+
           // Import data
           $("import-data-btn").addEventListener("click", () => {
             $("import-data").click();
           });
+
           $("import-data").addEventListener("change", (e) => {
             const file = e.target.files[0];
             if (!file) return;
