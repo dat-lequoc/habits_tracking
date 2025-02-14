@@ -236,17 +236,6 @@
             <label for="habit-name" class="block text-sm font-medium text-gray-700">Habit Name</label>
             <input type="text" id="habit-name" required class="mt-1 p-2 w-full border rounded focus:ring-blue-500 focus:border-blue-500" />
           </div>
-          <div>
-            <label for="habit-desc" class="block text-sm font-medium text-gray-700">Description (optional)</label>
-            <textarea id="habit-desc" class="mt-1 p-2 w-full border rounded focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
-          </div>
-          <div>
-            <label for="habit-type" class="block text-sm font-medium text-gray-700">Type</label>
-            <select id="habit-type" class="mt-1 p-2 w-full border rounded focus:ring-blue-500 focus:border-blue-500">
-              <option value="good">Good Habit</option>
-              <option value="bad">Bad Habit</option>
-            </select>
-          </div>
           <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 focus:outline-none">
             Add Habit
           </button>
@@ -270,17 +259,6 @@
           <div>
             <label for="edit-habit-name" class="block text-sm font-medium text-gray-700">Habit Name</label>
             <input type="text" id="edit-habit-name" required class="mt-1 p-2 w-full border rounded focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-          <div>
-            <label for="edit-habit-desc" class="block text-sm font-medium text-gray-700">Description (optional)</label>
-            <textarea id="edit-habit-desc" class="mt-1 p-2 w-full border rounded focus:ring-blue-500 focus:border-blue-500" rows="2"></textarea>
-          </div>
-          <div>
-            <label for="edit-habit-type" class="block text-sm font-medium text-gray-700">Type</label>
-            <select id="edit-habit-type" class="mt-1 p-2 w-full border rounded focus:ring-blue-500 focus:border-blue-500">
-              <option value="good">Good Habit</option>
-              <option value="bad">Bad Habit</option>
-            </select>
           </div>
           <div class="flex justify-between">
             <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 focus:outline-none">
@@ -333,8 +311,6 @@
         constructor(data) {
           this.id = data.id || Date.now().toString();
           this.name = data.name;
-          this.description = data.description || "";
-          this.type = data.type || "good";
           
           // Convert array history to object format if needed
           if (Array.isArray(data.history)) {
@@ -473,12 +449,10 @@
 
         saveHabits() {
           try {
-            // Convert habits to a simple format for storage
+            // Convert habits to a simple format for storage without the type property
             const dataToSave = this.habits.map(habit => ({
               id: habit.id,
               name: habit.name,
-              description: habit.description,
-              type: habit.type,
               history: habit.history
             }));
             
@@ -621,10 +595,10 @@
               const status = habit.getStatus(d);
               let bgColor;
               if (status === "completed") {
-                bgColor = habit.type === "good" ? "bg-green-500" : "bg-red-500";
+                bgColor = "bg-green-500";
                 cell.title = "Completed";
               } else if (status === "failed") {
-                bgColor = habit.type === "good" ? "bg-red-500" : "bg-green-500";
+                bgColor = "bg-red-500";
                 cell.title = "Failed";
               } else {
                 bgColor = "bg-gray-200";
@@ -666,8 +640,6 @@
           const index = this.habits.findIndex((h) => h.id === updatedData.id);
           if (index > -1) {
             this.habits[index].name = updatedData.name;
-            this.habits[index].description = updatedData.description;
-            this.habits[index].type = updatedData.type;
             this.saveHabits();
             this.renderUI();
           }
@@ -702,8 +674,6 @@
           if (!habit) return;
           $("edit-habit-id").value = habit.id;
           $("edit-habit-name").value = habit.name;
-          $("edit-habit-desc").value = habit.description;
-          $("edit-habit-type").value = habit.type;
           $("edit-habit-modal").classList.remove("hidden");
         }
 
@@ -728,8 +698,6 @@
             e.preventDefault();
             const data = {
               name: $("habit-name").value.trim(),
-              description: $("habit-desc").value.trim(),
-              type: $("habit-type").value,
             };
             if (data.name) {
               this.addHabit(data);
@@ -743,8 +711,6 @@
             const data = {
               id: $("edit-habit-id").value,
               name: $("edit-habit-name").value.trim(),
-              description: $("edit-habit-desc").value.trim(),
-              type: $("edit-habit-type").value,
             };
             if (data.name) {
               this.updateHabit(data);
