@@ -372,7 +372,7 @@
         </div>
         <div class="mt-4 flex justify-end space-x-2">
           <button type="button" id="add-selected-habits-btn" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700 transition">
-            Add Selected
+            Save Changes
           </button>
           <button type="button" class="modal-close bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition">
             Cancel
@@ -751,153 +751,60 @@
           `;
           container.appendChild(headerRow);
           
-          // Render grouped habits (only habits with a valid group)
+          // Common row class for consistent spacing
+          const rowClass = "grid grid-cols-[150px_1fr] items-center mb-2";
+          
+          // Render grouped habits
           const groupedHabits = this.groupHabits();
           Object.entries(groupedHabits).forEach(([groupName, habits]) => {
-            // Determine if the group is expanded (default is false)
             const groupExpanded = this.groupToggles[groupName] || false;
             
-            // Create a container for the entire group block
-            const groupContainer = document.createElement("div");
-            groupContainer.className = "mb-2"; // space between groups
+            // Group header row
+            const groupRow = document.createElement("div");
+            groupRow.className = rowClass;
             
-            // Create the header row with a toggle button
-            const headerRow = document.createElement("div");
-            headerRow.className = "flex items-center mb-2";
+            // Group header content
+            const groupHeader = document.createElement("div");
+            groupHeader.className = "flex items-center";
             
-            // Toggle button to show/hide subtasks
             const toggleButton = document.createElement("button");
-            toggleButton.className = "mr-2 text-blue-500 hover:text-blue-700";
+            toggleButton.className = "mr-2 text-blue-500 hover:text-blue-700 w-6";
             toggleButton.textContent = groupExpanded ? "-" : "+";
             toggleButton.addEventListener("click", () => {
               this.groupToggles[groupName] = !groupExpanded;
               this.renderHeatmap();
             });
-            headerRow.appendChild(toggleButton);
             
-            // Group label
-            const label = document.createElement("div");
-            label.className = "w-36 text-sm font-medium text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
-            label.textContent = groupName;
-            headerRow.appendChild(label);
+            const groupLabel = document.createElement("div");
+            groupLabel.className = "text-sm font-medium text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
+            groupLabel.textContent = groupName;
             
-            // Aggregated heatmap cells container for the group (same logic as before)
+            groupHeader.appendChild(toggleButton);
+            groupHeader.appendChild(groupLabel);
+            groupRow.appendChild(groupHeader);
+            
+            // Group heatmap cells
             const aggregatedCellsContainer = document.createElement("div");
-            aggregatedCellsContainer.className = "grid grid-cols-7 gap-1 flex-1";
+            aggregatedCellsContainer.className = "grid grid-cols-7 gap-1";
             
             dates.forEach((date) => {
               const cell = document.createElement("div");
               cell.className = "heatmap-cell";
               
-              // Calculate aggregate status for this group on the given date.
               const statuses = habits.map(h => h.getStatus(date));
               const completedCount = statuses.filter(s => s === "completed").length;
               const failedCount = statuses.filter(s => s === "failed").length;
               
               let bgColor;
               if (completedCount === habits.length) {
-                bgColor = "bg-green-500"; // All completed
+                bgColor = "bg-green-500";
                 cell.title = "All Completed";
               } else if (failedCount > 0) {
-                bgColor = "bg-red-500"; // Any failed
+                bgColor = "bg-red-500";
                 cell.title = "Some Failed";
               } else if (completedCount > 0) {
-                bgColor = "bg-yellow-500"; // Partially completed
+                bgColor = "bg-yellow-500";
                 cell.title = "Partially Completed";
-              } else {
-                bgColor = "bg-gray-200"; // None marked
-                cell.title = "Not Marked";
-              }
-              
-              cell.classList.add(bgColor);
-              cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
-              
-              // Clicking shows the group's habits modal.
-              cell.addEventListener("click", () => {
-                this.showGroupHabitsModal(groupName, date, habits);
-              });
-              
-              aggregatedCellsContainer.appendChild(cell);
-            });
-            
-            headerRow.appendChild(aggregatedCellsContainer);
-            groupContainer.appendChild(headerRow);
-            
-            // If expanded, render individual habit rows as subtasks
-            if (groupExpanded) {
-              habits.forEach(habit => {
-                const row = document.createElement("div");
-                row.className = "flex items-center mb-2 pl-6"; // indent for subtasks
-                
-                const habitLabel = document.createElement("div");
-                habitLabel.className = "w-36 text-sm font-medium text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
-                habitLabel.textContent = habit.name;
-                row.appendChild(habitLabel);
-                
-                const cellsContainer = document.createElement("div");
-                cellsContainer.className = "grid grid-cols-7 gap-1 flex-1";
-                
-                dates.forEach((date) => {
-                  const cell = document.createElement("div");
-                  cell.className = "heatmap-cell";
-                  const status = habit.getStatus(date);
-                  let bgColor;
-                  if (status === "completed") {
-                    bgColor = "bg-green-500";
-                    cell.title = "Completed";
-                  } else if (status === "failed") {
-                    bgColor = "bg-red-500";
-                    cell.title = "Failed";
-                  } else {
-                    bgColor = "bg-gray-200";
-                    cell.title = "Not Marked";
-                  }
-                  cell.classList.add(bgColor);
-                  cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
-                  
-                  // Clicking cycles through statuses: completed → failed → no color.
-                  cell.addEventListener("click", () => {
-                    habitManager.cycleToday(habit.id, date);
-                  });
-                  
-                  cellsContainer.appendChild(cell);
-                });
-                
-                row.appendChild(cellsContainer);
-                groupContainer.appendChild(row);
-              });
-            }
-            
-            container.appendChild(groupContainer);
-          });
-          
-          // Render ungrouped habits individually (do not group them together)
-          const ungroupedHabits = this.habits.filter(habit => !habit.group || habit.group.trim() === "");
-          ungroupedHabits.forEach(habit => {
-            const row = document.createElement("div");
-            row.className = "flex items-center mb-2";
-            
-            // Use the habit's name as the label
-            const label = document.createElement("div");
-            label.className = "w-36 text-sm font-medium text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
-            label.textContent = habit.name;
-            row.appendChild(label);
-            
-            const cellsContainer = document.createElement("div");
-            cellsContainer.className = "grid grid-cols-7 gap-1 flex-1";
-            
-            dates.forEach((date) => {
-              const cell = document.createElement("div");
-              cell.className = "heatmap-cell";
-              
-              const status = habit.getStatus(date);
-              let bgColor;
-              if (status === "completed") {
-                bgColor = "bg-green-500";
-                cell.title = "Completed";
-              } else if (status === "failed") {
-                bgColor = "bg-red-500";
-                cell.title = "Failed";
               } else {
                 bgColor = "bg-gray-200";
                 cell.title = "Not Marked";
@@ -906,9 +813,77 @@
               cell.classList.add(bgColor);
               cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
               
-              // Clicking cycles through statuses: completed → failed → no color.
               cell.addEventListener("click", () => {
-                habitManager.cycleToday(habit.id, date);
+                this.showGroupHabitsModal(groupName, date, habits);
+              });
+              
+              aggregatedCellsContainer.appendChild(cell);
+            });
+            
+            groupRow.appendChild(aggregatedCellsContainer);
+            container.appendChild(groupRow);
+            
+            // Render individual habits if group is expanded
+            if (groupExpanded) {
+              habits.forEach(habit => {
+                const habitRow = document.createElement("div");
+                habitRow.className = rowClass;
+                
+                const habitLabel = document.createElement("div");
+                habitLabel.className = "pl-8 text-sm text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
+                habitLabel.textContent = habit.name;
+                habitRow.appendChild(habitLabel);
+                
+                const cellsContainer = document.createElement("div");
+                cellsContainer.className = "grid grid-cols-7 gap-1";
+                
+                dates.forEach((date) => {
+                  const cell = document.createElement("div");
+                  cell.className = "heatmap-cell";
+                  const status = habit.getStatus(date);
+                  let bgColor = status === "completed" ? "bg-green-500" : 
+                               status === "failed" ? "bg-red-500" : "bg-gray-200";
+                  cell.classList.add(bgColor);
+                  cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
+                  
+                  cell.addEventListener("click", () => {
+                    this.cycleToday(habit.id, date);
+                  });
+                  
+                  cellsContainer.appendChild(cell);
+                });
+                
+                habitRow.appendChild(cellsContainer);
+                container.appendChild(habitRow);
+              });
+            }
+          });
+          
+          // Render ungrouped habits
+          const ungroupedHabits = this.habits.filter(habit => !habit.group || habit.group.trim() === "");
+          ungroupedHabits.forEach(habit => {
+            const row = document.createElement("div");
+            row.className = rowClass;
+            
+            const label = document.createElement("div");
+            label.className = "text-sm font-medium text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
+            label.textContent = habit.name;
+            row.appendChild(label);
+            
+            const cellsContainer = document.createElement("div");
+            cellsContainer.className = "grid grid-cols-7 gap-1";
+            
+            dates.forEach((date) => {
+              const cell = document.createElement("div");
+              cell.className = "heatmap-cell";
+              const status = habit.getStatus(date);
+              let bgColor = status === "completed" ? "bg-green-500" : 
+                           status === "failed" ? "bg-red-500" : "bg-gray-200";
+              cell.classList.add(bgColor);
+              cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
+              
+              cell.addEventListener("click", () => {
+                this.cycleToday(habit.id, date);
               });
               
               cellsContainer.appendChild(cell);
@@ -999,34 +974,63 @@
 
         // NEW: Open select habit modal to add an existing habit to the group
         openSelectHabitModal(targetGroupName) {
-          this.currentSelectGroup = targetGroupName; // store target group for later use
-          const eligibleHabits = this.habits.filter(habit => habit.group !== targetGroupName);
+          this.currentSelectGroup = targetGroupName;
           const modal = $("select-habit-modal");
           const title = $("select-habit-title");
-          title.textContent = `Select Habits to add to ${targetGroupName}`;
+          title.textContent = `Manage Habits in ${targetGroupName}`;
           const listContainer = $("select-habit-list");
           listContainer.innerHTML = "";
-          if (eligibleHabits.length === 0) {
-            listContainer.innerHTML = `<p class="text-gray-500">No eligible habits found.</p>`;
-          } else {
-            eligibleHabits.forEach(habit => {
-              const label = document.createElement("label");
-              label.className = "flex items-center space-x-2 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100";
-              
-              const checkbox = document.createElement("input");
-              checkbox.type = "checkbox";
-              checkbox.value = habit.id;
-              checkbox.className = "select-habit-checkbox";
-              
-              const span = document.createElement("span");
-              span.textContent = habit.name;
-              
-              label.appendChild(checkbox);
-              label.appendChild(span);
-              
-              listContainer.appendChild(label);
-            });
+
+          // Get current habits in the group and ungrouped habits
+          const currentGroupHabits = this.habits.filter(habit => habit.group === targetGroupName);
+          const ungroupedHabits = this.habits.filter(habit => !habit.group || habit.group === "");
+          
+          // Create sections for current and available habits
+          if (currentGroupHabits.length > 0) {
+            listContainer.innerHTML += `
+              <div class="mb-4">
+                <h3 class="font-medium text-gray-700 mb-2">Current Habits in Group</h3>
+                <div class="space-y-2">
+                  ${currentGroupHabits.map(habit => `
+                    <label class="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                      <input type="checkbox" 
+                        value="${habit.id}" 
+                        checked
+                        class="select-habit-checkbox current-group"
+                      >
+                      <span>${habit.name}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            `;
           }
+
+          if (ungroupedHabits.length > 0) {
+            listContainer.innerHTML += `
+              <div>
+                <h3 class="font-medium text-gray-700 mb-2">Available Habits</h3>
+                <div class="space-y-2">
+                  ${ungroupedHabits.map(habit => `
+                    <label class="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                      <input type="checkbox" 
+                        value="${habit.id}" 
+                        class="select-habit-checkbox available"
+                      >
+                      <span>${habit.name}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }
+
+          if (currentGroupHabits.length === 0 && ungroupedHabits.length === 0) {
+            listContainer.innerHTML = `
+              <p class="text-gray-500">No habits available to manage.</p>
+            `;
+          }
+
           modal.classList.remove("hidden");
         }
 
@@ -1148,14 +1152,30 @@
             e.target.value = "";
           });
 
-          // Add selected habits
+          // Update the add-selected-habits-btn click handler
           $("add-selected-habits-btn").addEventListener("click", () => {
-            const checkboxes = document.querySelectorAll("#select-habit-list .select-habit-checkbox");
-            checkboxes.forEach((checkbox) => {
+            // Handle current group habits (unchecking removes from group)
+            const currentGroupCheckboxes = document.querySelectorAll("#select-habit-list .select-habit-checkbox.current-group");
+            currentGroupCheckboxes.forEach((checkbox) => {
+              const habit = this.habits.find(h => h.id === checkbox.value);
+              if (habit) {
+                if (!checkbox.checked) {
+                  // Remove from group if unchecked
+                  habit.group = "";
+                }
+              }
+            });
+
+            // Handle available habits (checking adds to group)
+            const availableCheckboxes = document.querySelectorAll("#select-habit-list .select-habit-checkbox.available");
+            availableCheckboxes.forEach((checkbox) => {
               if (checkbox.checked) {
                 this.addExistingHabitToGroup(checkbox.value, this.currentSelectGroup);
               }
             });
+
+            this.saveHabits();
+            this.renderUI();
             this.closeSelectHabitModal();
           });
         }
