@@ -861,26 +861,52 @@
               cell.className = "heatmap-cell";
               
               const statuses = habits.map(h => h.getStatus(date));
+              const total = habits.length;
               const completedCount = statuses.filter(s => s === "completed").length;
               const failedCount = statuses.filter(s => s === "failed").length;
+              const noStatusCount = total - completedCount - failedCount;
               
-              let bgColor;
-              if (completedCount === habits.length) {
-                bgColor = "bg-green-500";
-                cell.title = "All Completed";
-              } else if (failedCount > 0) {
-                bgColor = "bg-red-500";
-                cell.title = "Some Failed";
-              } else if (completedCount > 0) {
-                bgColor = "bg-yellow-500";
-                cell.title = "Partially Completed";
-              } else {
-                bgColor = "bg-gray-200";
-                cell.title = "Not Marked";
+              // Calculate percentages
+              const failedPercent = (failedCount / total) * 100;
+              const completedPercent = (completedCount / total) * 100;
+              const noStatusPercent = (noStatusCount / total) * 100;
+              
+              // Create gradient based on proportions with better colors
+              let gradient = [];
+              let currentPosition = 0;
+              
+              if (failedCount > 0) {
+                gradient.push(`#fca5a5 ${currentPosition}% ${currentPosition + failedPercent}%`); // Lighter red
+                currentPosition += failedPercent;
+              }
+              if (completedCount > 0) {
+                gradient.push(`#86efac ${currentPosition}% ${currentPosition + completedPercent}%`); // Lighter green
+                currentPosition += completedPercent;
+              }
+              if (noStatusCount > 0) {
+                gradient.push(`#f3f4f6 ${currentPosition}% ${currentPosition + noStatusPercent}%`); // Lighter gray
               }
               
-              cell.classList.add(bgColor);
-              cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
+              cell.style.background = gradient.length > 1 
+                ? `linear-gradient(to right, ${gradient.join(', ')})`
+                : gradient.length === 1 
+                  ? gradient[0].split(' ')[0] // Use solid color if only one status
+                  : '#f3f4f6'; // Default light gray if no statuses
+              
+              // Add a subtle border to make sections more distinct
+              cell.style.border = '2px solid white';
+              cell.style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.1)';
+              
+              // Update the date number color to be more visible
+              cell.innerHTML = `<span class="text-xs text-gray-700">${new Date(date).getDate()}</span>`;
+              
+              // Add a more detailed tooltip
+              const completedPercentText = Math.round(completedPercent);
+              const failedPercentText = Math.round(failedPercent);
+              const noStatusPercentText = Math.round(noStatusPercent);
+              cell.title = `${completedCount} completed (${completedPercentText}%)
+${failedCount} failed (${failedPercentText}%)
+${noStatusCount} not marked (${noStatusPercentText}%)`;
               
               cell.addEventListener("click", () => {
                 this.showGroupHabitsModal(groupName, date, habits);
