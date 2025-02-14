@@ -501,6 +501,7 @@
           
           this.habits = [];
           this.groups = new Set(); // Store unique groups
+          this.groupToggles = {}; 
           this.LOCAL_STORAGE_KEY = "habitTrackerHabits";
           this.GROUPS_STORAGE_KEY = "habitTrackerGroups";
           this.loadGroups();
@@ -711,9 +712,9 @@
               cell.classList.add(bgColor);
               cell.innerHTML = `<span class="text-xs text-white">${new Date(today).getDate()}</span>`;
               
-              // Optional click: toggles the habit's status for that day.
+              // Clicking cycles through statuses: completed → failed → no color.
               cell.addEventListener("click", () => {
-                habitManager.toggleToday(habit.id, 'completed');
+                habitManager.cycleToday(habit.id, today);
               });
               
               cellsContainer.appendChild(cell);
@@ -753,24 +754,42 @@
           // Render grouped habits (only habits with a valid group)
           const groupedHabits = this.groupHabits();
           Object.entries(groupedHabits).forEach(([groupName, habits]) => {
-            const row = document.createElement("div");
-            row.className = "flex items-center mb-2";
+            // Determine if the group is expanded (default is false)
+            const groupExpanded = this.groupToggles[groupName] || false;
+            
+            // Create a container for the entire group block
+            const groupContainer = document.createElement("div");
+            groupContainer.className = "mb-2"; // space between groups
+            
+            // Create the header row with a toggle button
+            const headerRow = document.createElement("div");
+            headerRow.className = "flex items-center mb-2";
+            
+            // Toggle button to show/hide subtasks
+            const toggleButton = document.createElement("button");
+            toggleButton.className = "mr-2 text-blue-500 hover:text-blue-700";
+            toggleButton.textContent = groupExpanded ? "-" : "+";
+            toggleButton.addEventListener("click", () => {
+              this.groupToggles[groupName] = !groupExpanded;
+              this.renderHeatmap();
+            });
+            headerRow.appendChild(toggleButton);
             
             // Group label
             const label = document.createElement("div");
             label.className = "w-36 text-sm font-medium text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
             label.textContent = groupName;
-            row.appendChild(label);
+            headerRow.appendChild(label);
             
-            // Heatmap cells container (aggregated for the group)
-            const cellsContainer = document.createElement("div");
-            cellsContainer.className = "grid grid-cols-7 gap-1 flex-1";
+            // Aggregated heatmap cells container for the group (same logic as before)
+            const aggregatedCellsContainer = document.createElement("div");
+            aggregatedCellsContainer.className = "grid grid-cols-7 gap-1 flex-1";
             
             dates.forEach((date) => {
               const cell = document.createElement("div");
               cell.className = "heatmap-cell";
               
-              // Calculate completion statuses for this group on the given date.
+              // Calculate aggregate status for this group on the given date.
               const statuses = habits.map(h => h.getStatus(date));
               const completedCount = statuses.filter(s => s === "completed").length;
               const failedCount = statuses.filter(s => s === "failed").length;
@@ -798,11 +817,58 @@
                 this.showGroupHabitsModal(groupName, date, habits);
               });
               
-              cellsContainer.appendChild(cell);
+              aggregatedCellsContainer.appendChild(cell);
             });
             
-            row.appendChild(cellsContainer);
-            container.appendChild(row);
+            headerRow.appendChild(aggregatedCellsContainer);
+            groupContainer.appendChild(headerRow);
+            
+            // If expanded, render individual habit rows as subtasks
+            if (groupExpanded) {
+              habits.forEach(habit => {
+                const row = document.createElement("div");
+                row.className = "flex items-center mb-2 pl-6"; // indent for subtasks
+                
+                const habitLabel = document.createElement("div");
+                habitLabel.className = "w-36 text-sm font-medium text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap";
+                habitLabel.textContent = habit.name;
+                row.appendChild(habitLabel);
+                
+                const cellsContainer = document.createElement("div");
+                cellsContainer.className = "grid grid-cols-7 gap-1 flex-1";
+                
+                dates.forEach((date) => {
+                  const cell = document.createElement("div");
+                  cell.className = "heatmap-cell";
+                  const status = habit.getStatus(date);
+                  let bgColor;
+                  if (status === "completed") {
+                    bgColor = "bg-green-500";
+                    cell.title = "Completed";
+                  } else if (status === "failed") {
+                    bgColor = "bg-red-500";
+                    cell.title = "Failed";
+                  } else {
+                    bgColor = "bg-gray-200";
+                    cell.title = "Not Marked";
+                  }
+                  cell.classList.add(bgColor);
+                  cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
+                  
+                  // Clicking cycles through statuses: completed → failed → no color.
+                  cell.addEventListener("click", () => {
+                    habitManager.cycleToday(habit.id, date);
+                  });
+                  
+                  cellsContainer.appendChild(cell);
+                });
+                
+                row.appendChild(cellsContainer);
+                groupContainer.appendChild(row);
+              });
+            }
+            
+            container.appendChild(groupContainer);
           });
           
           // Render ungrouped habits individually (do not group them together)
@@ -840,9 +906,9 @@
               cell.classList.add(bgColor);
               cell.innerHTML = `<span class="text-xs text-white">${new Date(date).getDate()}</span>`;
               
-              // Optional click: toggles the habit's status for that day.
+              // Clicking cycles through statuses: completed → failed → no color.
               cell.addEventListener("click", () => {
-                habitManager.toggleToday(habit.id, 'completed');
+                habitManager.cycleToday(habit.id, date);
               });
               
               cellsContainer.appendChild(cell);
@@ -882,6 +948,31 @@
           if (!habit) return;
           const today = formatDate(new Date());
           habit.toggleCompletion(today, status);
+          this.saveHabits();
+          this.renderUI();
+        }
+
+        // New: Cycles through statuses for a given habit on a given date.
+        cycleToday(habitId, date) {
+          const habit = this.habits.find((h) => h.id === habitId);
+          if (!habit) return;
+          const currentStatus = habit.getStatus(date) || "";
+          let newStatus;
+          if (currentStatus === "") {
+            newStatus = "completed";
+          } else if (currentStatus === "completed") {
+            newStatus = "failed";
+          } else if (currentStatus === "failed") {
+            newStatus = "";
+          }
+
+          if (newStatus === "") {
+            habit.unmark(date);
+          } else if (newStatus === "completed") {
+            habit.markCompleted(date);
+          } else if (newStatus === "failed") {
+            habit.markFailed(date);
+          }
           this.saveHabits();
           this.renderUI();
         }
